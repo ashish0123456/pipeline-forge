@@ -1,9 +1,11 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  status: MyString
+  name: Test Pipeline One
+  status: pending
   project: one
 
 two:
-  status: MyString
+  name: Test Pipeline Two
+  status: running
   project: two

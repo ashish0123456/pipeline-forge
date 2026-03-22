@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ci_platform_db
+      POSTGRES_USER: ci_platform
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  app:
+    build: .
+    environment:
+      RAILS_ENV: development
+      CI_PLATFORM_DATABASE_USERNAME: ci_platform
+      CI_PLATFORM_DATABASE_PASSWORD: password
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/rails
+      - bundle_cache:/usr/local/bundle
+    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails db:migrate && bundle exec rails s -p 3000 -b '0.0.0.0'"
+
+  worker:
+    build: .
+    environment:
+      RAILS_ENV: development
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
+      CI_PLATFORM_DATABASE_USERNAME: ci_platform
+      CI_PLATFORM_DATABASE_PASSWORD: ${CI_PLATFORM_DATABASE_PASSWORD}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    command: bundle exec sidekiq
+
+volumes:
+  postgres_data:
+  redis_data:
+  bundle_cache:

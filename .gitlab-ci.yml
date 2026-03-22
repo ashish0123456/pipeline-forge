@@ -1,0 +1,84 @@
+stages:
+  - test
+  - build
+  - push
+
+variables:
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_DRIVER: overlay2
+  IMAGE_NAME: $DOCKERHUB_USERNAME/ci_platform
+
+# -------------------------
+# TEST STAGE
+# -------------------------
+test:
+  stage: test
+  image: ruby:3.4.8
+  services:
+    - postgres:15
+    - redis:7-alpine
+
+  variables:
+    POSTGRES_DB: ci_platform_test
+    POSTGRES_USER: ci_platform
+    POSTGRES_PASSWORD: password
+    REDIS_URL: redis://redis:6379/0
+
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq postgresql-client
+    - gem install bundler
+    - bundle config set path 'vendor/ruby'
+    - bundle install --jobs $(nproc) --retry 3
+    - bundle exec rails db:create RAILS_ENV=test
+    - bundle exec rails db:migrate RAILS_ENV=test
+
+  script:
+    - bundle exec rails test
+
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - vendor/ruby
+
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# -------------------------
+# BUILD STAGE
+# -------------------------
+build:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+
+  script:
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA .
+    - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
+
+  artifacts:
+    expire_in: 1 hour
+    reports:
+      dotenv: build.env
+
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# -------------------------
+# PUSH STAGE
+# -------------------------
+push:
+  stage: push
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+
+  script:
+    - docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $IMAGE_NAME:latest
+
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
