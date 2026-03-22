@@ -1,0 +1,40 @@
+<div class="breadcrumb">
+  <%= link_to "Projects", projects_path %>
+  <span class="separator">/</span>
+  <%= link_to @project.name, @project %>
+  <span class="separator">/</span>
+  <span>Edit</span>
+</div>
+
+<div class="form-layout">
+  <h1><i class="fas fa-edit"></i> Edit Project</h1>
+  <p style="margin-bottom: 24px; color: var(--text-secondary);">Update project details</p>
+
+  <% if @project.errors.any? %>
+    <div class="error-messages">
+      <h2><%= pluralize(@project.errors.count, "error") %> prevented this project from being saved:</h2>
+      <ul>
+        <% @project.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form_with(model: @project, local: true) do |form| %>
+    <div class="form-group">
+      <%= form.label :name, "Project Name" %>
+      <%= form.text_field :name, class: "form-control" %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :repository_url, "Repository URL" %>
+      <%= form.text_field :repository_url, class: "form-control" %>
+    </div>
+
+    <div class="btn-group">
+      <%= form.submit "Update Project", class: "btn btn-primary" %>
+      <%= link_to "Cancel", @project, class: "btn btn-secondary" %>
+    </div>
+  <% end %>
+</div>

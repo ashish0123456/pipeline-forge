@@ -1,0 +1,100 @@
+<div class="breadcrumb">
+  <%= link_to "Projects", projects_path %>
+  <span class="separator">/</span>
+  <%= link_to @project.name, @project %>
+  <span class="separator">/</span>
+  <%= link_to "Pipelines", project_pipelines_path(@project) %>
+  <span class="separator">/</span>
+  <span><%= @pipeline.name %></span>
+</div>
+
+<div class="detail-section">
+  <div class="page-header">
+    <div class="page-header-title">
+      <h1><i class="fas fa-stream"></i> <%= @pipeline.name %></h1>
+      <p>Part of <%= link_to @project.name, @project, style: "color: var(--primary); text-decoration: none;" %></p>
+    </div>
+    <div class="page-header-actions">
+      <% if !@pipeline.running? %>
+        <%= button_to "Run Pipeline", run_project_pipeline_path(@project, @pipeline), method: :post, class: "btn btn-success", data: { confirm: "Are you sure you want to run this pipeline?" } %>
+      <% end %>
+      <%= link_to "Edit", edit_project_pipeline_path(@project, @pipeline), class: "btn btn-secondary btn-sm" %>
+      <%= button_to "Delete", [@project, @pipeline], method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger btn-sm" %>
+    </div>
+  </div>
+
+  <div class="detail-row">
+    <div class="detail-label">Status</div>
+    <div class="detail-value">
+      <span class="status-badge status-<%= @pipeline.status %>">
+        <i class="fas fa-circle" style="font-size: 8px;"></i>
+        <%= @pipeline.status %>
+      </span>
+    </div>
+  </div>
+
+  <div class="detail-row">
+    <div class="detail-label">Created</div>
+    <div class="detail-value"><%= @pipeline.created_at.strftime('%b %d, %Y at %I:%M %p') %></div>
+  </div>
+
+  <div class="detail-row">
+    <div class="detail-label">Updated</div>
+    <div class="detail-value"><%= @pipeline.updated_at.strftime('%b %d, %Y at %I:%M %p') %></div>
+  </div>
+</div>
+
+<div class="page-header" style="margin-top: 32px;">
+  <div class="page-header-title">
+    <h2><i class="fas fa-tasks"></i> Jobs</h2>
+    <p>Monitor jobs in this pipeline</p>
+  </div>
+  <div class="page-header-actions">
+    <%= link_to "+ New Job", new_project_pipeline_job_path(@project, @pipeline), class: "btn btn-primary" %>
+  </div>
+</div>
+
+<div class="table-container">
+  <% if @pipeline.jobs.any? %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width: 80px;">ID</th>
+          <th>Job Name</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th style="width: 150px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @pipeline.jobs.order(:created_at).each do |job| %>
+          <tr>
+            <td><strong>#<%= job.id %></strong></td>
+            <td><%= link_to job.name, [@project, @pipeline, job], style: "color: var(--primary); text-decoration: none;" %></td>
+            <td>
+              <span class="status-badge status-<%= job.status %>">
+                <i class="fas fa-circle" style="font-size: 8px;"></i>
+                <%= job.status %>
+              </span>
+            </td>
+            <td><%= time_ago_in_words(job.created_at) %> ago</td>
+            <td>
+              <div class="action-links">
+                <%= link_to "View", [@project, @pipeline, job] %>
+                <%= link_to "Edit", edit_project_pipeline_job_path(@project, @pipeline, job) %>
+                <%= link_to "Delete", [@project, @pipeline, job], method: :delete, data: { confirm: "Are you sure?" }, style: "color: var(--danger);" %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <div class="empty-state">
+      <i class="fas fa-tasks"></i>
+      <div class="empty-state-title">No jobs yet</div>
+      <p class="empty-state-text">Add a job to this pipeline</p>
+      <%= link_to "Create Job", new_project_pipeline_job_path(@project, @pipeline), class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>

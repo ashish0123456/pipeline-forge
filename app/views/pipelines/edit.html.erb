@@ -1,0 +1,43 @@
+<div class="breadcrumb">
+  <%= link_to "Projects", projects_path %>
+  <span class="separator">/</span>
+  <%= link_to @project.name, @project %>
+  <span class="separator">/</span>
+  <%= link_to "Pipelines", project_pipelines_path(@project) %>
+  <span class="separator">/</span>
+  <%= link_to "#{@pipeline.name}", [@project, @pipeline] %>
+  <span class="separator">/</span>
+  <span>Edit</span>
+</div>
+
+<div class="form-layout">
+  <h1><i class="fas fa-edit"></i> Edit <%= @pipeline.name %></h1>
+  <p style="margin-bottom: 24px; color: var(--text-secondary);">Update pipeline status</p>
+
+  <% if @pipeline.errors.any? %>
+    <div class="error-messages">
+      <h2><%= pluralize(@pipeline.errors.count, "error") %> prevented this pipeline from being saved:</h2>
+      <ul>
+        <% @pipeline.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form_with(model: [@project, @pipeline], local: true) do |form| %>
+    <div class="form-group">
+      <%= form.label :name, "Pipeline Name" %>
+      <%= form.text_field :name, class: "form-control" %>
+    </div>
+    <div class="form-group">
+      <%= form.label :status, "Pipeline Status" %>
+      <%= form.select :status, Pipeline.statuses.keys, {}, class: "form-control" %>
+    </div>
+
+    <div class="btn-group">
+      <%= form.submit "Update Pipeline", class: "btn btn-primary" %>
+      <%= link_to "Cancel", [@project, @pipeline], class: "btn btn-secondary" %>
+    </div>
+  <% end %>
+</div>

@@ -1,0 +1,58 @@
+<div class="breadcrumb">
+  <%= link_to "Projects", projects_path %>
+  <span class="separator">/</span>
+  <%= link_to @pipeline.project.name, @pipeline.project %>
+  <span class="separator">/</span>
+  <%= link_to "Pipeline ##{@pipeline.id}", [@pipeline.project, @pipeline] %>
+  <span class="separator">/</span>
+  <%= link_to "Jobs", project_pipeline_jobs_path(@pipeline.project, @pipeline) %>
+  <span class="separator">/</span>
+  <span><%= @job.name %></span>
+</div>
+
+<div class="detail-section">
+  <div class="page-header">
+    <div class="page-header-title">
+      <h1><i class="fas fa-tasks"></i> <%= @job.name %></h1>
+      <p><%= @job.name %> • <%= @pipeline.name %> • <%= link_to @pipeline.project.name, @pipeline.project, style: "color: var(--primary); text-decoration: none;" %></p>
+    </div>
+    <div class="page-header-actions">
+      <span class="status-badge status-<%= @job.status %>" style="font-size: 14px; padding: 8px 14px;">
+        <i class="fas fa-circle" style="font-size: 10px;"></i>
+        <%= @job.status %>
+      </span>
+    </div>
+  </div>
+
+  <div class="detail-row">
+    <div class="detail-label">Status</div>
+    <div class="detail-value">
+      <span class="status-badge status-<%= @job.status %>">
+        <i class="fas fa-circle" style="font-size: 8px;"></i>
+        <%= @job.status %>
+      </span>
+    </div>
+  </div>
+
+  <div class="detail-row">
+    <div class="detail-label">Pipeline</div>
+    <div class="detail-value">
+      <%= link_to "#{@pipeline.name}", [@pipeline.project, @pipeline], style: "color: var(--primary); text-decoration: none;" %>
+    </div>
+  </div>
+
+  <div class="detail-row">
+    <div class="detail-label">Created</div>
+    <div class="detail-value"><%= @job.created_at.strftime('%b %d, %Y at %I:%M %p') %></div>
+  </div>
+
+  <div class="detail-row">
+    <div class="detail-label">Updated</div>
+    <div class="detail-value"><%= @job.updated_at.strftime('%b %d, %Y at %I:%M %p') %></div>
+  </div>
+</div>
+
+<div style="margin-top: 24px;">
+  <%= link_to "Edit", edit_project_pipeline_job_path(@pipeline.project, @pipeline, @job), class: "btn btn-secondary" %>
+  <%= link_to "Delete", [@pipeline.project, @pipeline, @job], method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger" %>
+</div>

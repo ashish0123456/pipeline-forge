@@ -1,29 +1,82 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "Ci Platform" %></title>
+    <title><%= content_for(:title) || "CI Platform" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Ci Platform">
+    <meta name="application-name" content="CI Platform">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
     <%= yield :head %>
 
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
-
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
   <body>
-    <%= yield %>
+    <div class="app-container">
+      <!-- Header -->
+      <header class="app-header">
+        <div class="header-brand">
+          <%= link_to "CI Platform", root_path, class: "brand-link" %>
+        </div>
+        <div class="header-actions">
+          <span class="user-info">
+            <i class="fas fa-user-circle"></i> Developer
+          </span>
+        </div>
+      </header>
+
+      <!-- Main content wrapper -->
+      <div class="app-wrapper">
+        <!-- Sidebar -->
+        <aside class="app-sidebar">
+          <nav class="sidebar-nav">
+            <div class="nav-section">
+              <h3 class="nav-title">Main</h3>
+              <ul class="nav-list">
+                <li>
+                  <% nav_class = "nav-link #{current_page?(projects_path) ? 'active' : ''}" %>
+                  <%= link_to projects_path, class: nav_class do %>
+                    <i class="fas fa-cube"></i>
+                    <span>Projects</span>
+                  <% end %>
+                </li>
+              </ul>
+            </div>
+          </nav>
+        </aside>
+
+        <!-- Main content area -->
+        <main class="app-main">
+          <div class="content-container">
+            <!-- Flash messages -->
+            <% if notice.present? %>
+              <div class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle"></i>
+                <%= notice %>
+              </div>
+            <% end %>
+
+            <% if alert.present? %>
+              <div class="alert alert-danger" role="alert">
+                <i class="fas fa-exclamation-circle"></i>
+                <%= alert %>
+              </div>
+            <% end %>
+
+            <!-- Page content -->
+            <%= yield %>
+          </div>
+        </main>
+      </div>
+    </div>
   </body>
 </html>

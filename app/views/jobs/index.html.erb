@@ -1,0 +1,64 @@
+<div class="breadcrumb">
+  <%= link_to "Projects", projects_path %>
+  <span class="separator">/</span>
+  <%= link_to @pipeline.project.name, @pipeline.project %>
+  <span class="separator">/</span>
+  <%= link_to "#{@pipeline.name}", [@pipeline.project, @pipeline] %>
+  <span class="separator">/</span>
+  <span>Jobs</span>
+</div>
+
+<div class="page-header">
+  <div class="page-header-title">
+    <h1><i class="fas fa-tasks"></i> Jobs</h1>
+    <p>All jobs in <%= @pipeline.name %></p>
+  </div>
+  <div class="page-header-actions">
+    <%= link_to "+ New Job", new_project_pipeline_job_path(@pipeline.project, @pipeline), class: "btn btn-primary" %>
+  </div>
+</div>
+
+<div class="table-container">
+  <% if @jobs.any? %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width: 80px;">ID</th>
+          <th>Job Name</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th style="width: 150px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @jobs.order(:created_at).each do |job| %>
+          <tr>
+            <td><strong>#<%= job.id %></strong></td>
+            <td><%= link_to job.name, [@pipeline.project, @pipeline, job], style: "color: var(--primary); text-decoration: none;" %></td>
+            <td>
+              <span class="status-badge status-<%= job.status %>">
+                <i class="fas fa-circle" style="font-size: 8px;"></i>
+                <%= job.status %>
+              </span>
+            </td>
+            <td><%= time_ago_in_words(job.created_at) %> ago</td>
+            <td>
+              <div class="action-links">
+                <%= link_to "View", [@pipeline.project, @pipeline, job] %>
+                <%= link_to "Edit", edit_project_pipeline_job_path(@pipeline.project, @pipeline, job) %>
+                <%= button_to "Delete", [@pipeline.project, @pipeline, job], method: :delete, data: { confirm: "Are you sure?" }, style: "color: var(--danger);" %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <div class="empty-state">
+      <i class="fas fa-inbox"></i>
+      <div class="empty-state-title">No jobs yet</div>
+      <p class="empty-state-text">Create a job to add work to this pipeline</p>
+      <%= link_to "Create Job", new_project_pipeline_job_path(@pipeline.project, @pipeline), class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>
