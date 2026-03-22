@@ -110,4 +110,5 @@ The application provides both HTML and JSON APIs:
 - **Background Jobs**: Sidekiq with Redis
 - **Frontend**: Hotwire (Turbo/Stimulus)
 - **Styling**: Custom CSS with variables
-- **Containerization**: Docker
+- **Containerization**: Docker 
+
