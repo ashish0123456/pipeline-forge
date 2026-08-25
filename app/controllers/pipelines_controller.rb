@@ -1,9 +1,11 @@
 class PipelinesController < ApplicationController
+    include Auditable
     before_action :set_project
-    before_action :set_pipeline, only: [:show, :edit, :update, :destroy]
+    before_action :set_pipeline, only: [ :show, :edit, :update, :destroy, :run ]
 
     def set_project
-        @project = Project.find(params[:project_id])
+        @project = policy_scope(Project).find(params[:project_id])
+        authorize @project, :show?
     end
 
     def set_pipeline
@@ -19,6 +21,9 @@ class PipelinesController < ApplicationController
     end
 
     def show
+        authorize @project
+        @pipeline = @project.pipelines.includes(jobs: { job_runs: :execution_logs }, pipeline_runs: { job_runs: :job }).find(params[:id])
+        @recent_runs = @pipeline.pipeline_runs.recent.limit(8)
         respond_to do |format|
             format.html
             format.json { render json: @pipeline }
@@ -26,16 +31,20 @@ class PipelinesController < ApplicationController
     end
 
     def new
+        authorize @project, :update?
         @pipeline = @project.pipelines.new
     end
 
     def edit
+        authorize @project, :update?
     end
 
     def create
+        authorize @project, :update?
         @pipeline = @project.pipelines.new(pipeline_params.merge(status: :pending))
         respond_to do |format|
             if @pipeline.save
+                record_audit!("pipeline.create", @pipeline)
                 format.html { redirect_to [@project, @pipeline], notice: "Pipeline was successfully created." }
                 format.json { render json: @pipeline, status: :created }
             else
@@ -46,24 +55,25 @@ class PipelinesController < ApplicationController
     end
 
     def run
-        if @pipeline.pending? || @pipeline.failed?
-            @pipeline.update(status: :running)
-            PipelineJob.perform_async(@pipeline.id)
-            respond_to do |format|
-                format.html { redirect_to [@project, @pipeline], notice: "Pipeline execution started." }
-                format.json { render json: { message: "Pipeline execution started" }, status: :ok }
-            end
-        else
-            respond_to do |format|
-                format.html { redirect_to [@project, @pipeline], alert: "Pipeline cannot be run in current state." }
-                format.json { render json: { error: "Pipeline cannot be run in current state" }, status: :unprocessable_entity }
-            end
+        authorize @project, :run?
+        run = CreatePipelineRun.call(@pipeline, idempotency_key: request.headers["Idempotency-Key"])
+        record_audit!("pipeline.run", run, { pipeline_id: @pipeline.id })
+        respond_to do |format|
+            format.html { redirect_to [@project, @pipeline], notice: "Pipeline execution started." }
+            format.json { render json: { id: run.id, status: run.status }, status: :accepted }
+        end
+    rescue CreatePipelineRun::AlreadyRunning
+        respond_to do |format|
+            format.html { redirect_to [@project, @pipeline], alert: "Pipeline is already running." }
+            format.json { render json: { error: "Pipeline is already running" }, status: :conflict }
         end
     end
 
     def update
+        authorize @project, :update?
         respond_to do |format|
             if @pipeline.update(pipeline_params)
+                record_audit!("pipeline.update", @pipeline)
                 format.html { redirect_to [@project, @pipeline], notice: "Pipeline was successfully updated." }
                 format.json { render json: @pipeline }
             else
@@ -74,7 +84,9 @@ class PipelinesController < ApplicationController
     end
 
     def destroy
+        authorize @project, :update?
         @pipeline.destroy
+        record_audit!("pipeline.destroy", @pipeline)
         respond_to do |format|
             format.html { redirect_to project_pipelines_url(@project), notice: "Pipeline was successfully destroyed." }
             format.json { render json: { message: "Pipeline deleted successfully" } }

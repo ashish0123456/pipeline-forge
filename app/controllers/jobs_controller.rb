@@ -3,7 +3,8 @@ class JobsController < ApplicationController
     before_action :set_job, only: [:show, :edit, :update, :destroy]
 
     def set_pipeline
-        @pipeline = Pipeline.find(params[:pipeline_id])
+        @pipeline = policy_scope(Project).find(params[:project_id]).pipelines.find(params[:pipeline_id])
+        authorize @pipeline.project, :show?
     end
 
     def set_job
@@ -19,6 +20,7 @@ class JobsController < ApplicationController
     end
 
     def show
+        @job_run = @job.job_runs.includes(:execution_logs).order(created_at: :desc).first
         respond_to do |format|
             format.html
             format.json { render json: @job }
@@ -26,6 +28,7 @@ class JobsController < ApplicationController
     end
 
     def new
+        authorize @pipeline.project, :update?
         @job = @pipeline.jobs.new
     end
 
@@ -33,6 +36,7 @@ class JobsController < ApplicationController
     end
 
     def create
+        authorize @pipeline.project, :update?
         @job = @pipeline.jobs.create(job_params)
         respond_to do |format|
             if @job.persisted?
@@ -46,6 +50,7 @@ class JobsController < ApplicationController
     end
 
     def update
+        authorize @pipeline.project, :update?
         respond_to do |format|
             if @job.update(job_params)
                 format.html { redirect_to [@pipeline.project, @pipeline, @job], notice: "Job was successfully updated." }
@@ -58,6 +63,7 @@ class JobsController < ApplicationController
     end
 
     def destroy
+        authorize @pipeline.project, :update?
         @job.destroy
         respond_to do |format|
             format.html { redirect_to project_pipeline_jobs_url(@pipeline.project, @pipeline), notice: "Job was successfully destroyed." }

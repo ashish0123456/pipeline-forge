@@ -1,43 +1,50 @@
-<div class="page-header">
+<div class="page-header hero-header">
   <div class="page-header-title">
-    <h1><i class="fas fa-cube"></i> Projects</h1>
-    <p>Manage your CI/CD projects</p>
+    <span class="eyebrow">Delivery workspace</span>
+    <h1>Projects</h1>
+    <p>Keep every pipeline, signal, and release in view.</p>
   </div>
   <div class="page-header-actions">
-    <%= link_to "+ New Project", new_project_path, class: "btn btn-primary" %>
+    <%= link_to new_project_path, class: "btn btn-primary" do %><span aria-hidden="true">+</span> New project<% end %>
   </div>
 </div>
 
-<div class="table-container">
+<div class="metric-grid">
+  <div class="metric-card"><span class="metric-label">Projects</span><strong><%= @projects.size %></strong><span class="metric-note">in this workspace</span></div>
+  <div class="metric-card"><span class="metric-label">Pipelines</span><strong><%= @projects.sum { |project| project.pipelines.size } %></strong><span class="metric-note">ready to run</span></div>
+  <div class="metric-card metric-card-accent"><span class="metric-label">System</span><strong>Healthy</strong><span class="metric-note">database and workers online</span></div>
+</div>
+
+<div class="section-heading"><div><span class="eyebrow">Your projects</span><h2>Recent work</h2></div><span class="section-count"><%= pluralize(@projects.size, "project") %></span></div>
+<div class="table-container table-shell">
   <% if @projects.any? %>
     <table class="table">
       <thead>
         <tr>
-          <th>Project Name</th>
+          <th>Project</th>
           <th>Repository</th>
           <th>Pipelines</th>
-          <th style="width: 200px;">Actions</th>
+          <th> </th>
         </tr>
       </thead>
       <tbody>
         <% @projects.each do |project| %>
           <tr>
             <td>
-              <strong><%= link_to project.name, project, style: "color: var(--primary); text-decoration: none;" %></strong>
+              <strong class="table-primary"><%= link_to project.name, project %></strong>
             </td>
             <td>
-              <code style="background-color: var(--light-bg); padding: 2px 6px; border-radius: 4px; font-size: 12px;"><%= project.repository_url %></code>
+              <code class="repo-url"><%= project.repository_url %></code>
             </td>
             <td>
-              <span style="background-color: rgba(13, 71, 161, 0.05); padding: 4px 8px; border-radius: 4px; font-weight: 500;">
+              <span class="count-chip">
                 <%= project.pipelines.count %>
               </span>
             </td>
             <td>
-              <div class="action-links">
-                <%= link_to "View", project %>
-                <%= link_to "Edit", edit_project_path(project) %>
-                <%= button_to "Delete", project, method: :delete, data: { confirm: "Are you sure?" }, style: "color: var(--danger);" %>
+              <div class="action-links action-links-end">
+                <%= link_to "Open project", project, class: "table-action" %>
+                <%= link_to "Edit", edit_project_path(project), class: "table-action muted" %>
               </div>
             </td>
           </tr>

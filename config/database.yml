@@ -28,7 +28,7 @@ development:
   username: <%= ENV["CI_PLATFORM_DATABASE_USERNAME"] %>
   # The password associated with the PostgreSQL role (username).
   password: <%= ENV["CI_PLATFORM_DATABASE_PASSWORD"] %>
-  host: localhost
+  host: <%= ENV.fetch("CI_PLATFORM_DATABASE_HOST", "localhost") %>
 
   # The TCP port the server listens on. Defaults to 5432.
   # If your server runs on a different port number, change accordingly.

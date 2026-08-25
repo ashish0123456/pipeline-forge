@@ -17,7 +17,11 @@ gem "stimulus-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
 
-gem 'sidekiq'
+gem "sidekiq"
+gem "redis", "~> 5.0"
+gem "bcrypt", "~> 3.1"
+gem "pundit", "~> 2.4"
+gem "rack-attack", "~> 6.7"
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"

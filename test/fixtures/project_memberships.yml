@@ -1,0 +1,4 @@
+admin_project:
+  project: one
+  user: admin
+  role: maintainer

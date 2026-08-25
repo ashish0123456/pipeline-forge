@@ -22,9 +22,9 @@ class JobTest < ActiveSupport::TestCase
   end
 
   test "status enum values" do
-    assert_equal 0, Job.statuses[:pending]
-    assert_equal 1, Job.statuses[:running]
-    assert_equal 2, Job.statuses[:success]
-    assert_equal 3, Job.statuses[:failed]
+    assert_equal "pending", Job.statuses[:pending]
+    assert_equal "running", Job.statuses[:running]
+    assert_equal "success", Job.statuses[:success]
+    assert_equal "failed", Job.statuses[:failed]
   end
 end

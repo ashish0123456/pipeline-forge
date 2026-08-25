@@ -52,6 +52,18 @@
   </div>
 </div>
 
+<% if @job_run %>
+  <div class="detail-section" style="margin-top: 24px;">
+    <div class="page-header">
+      <div class="page-header-title">
+        <h2>Execution log</h2>
+        <p>Attempt <%= @job_run.attempt %> · <%= @job_run.status %></p>
+      </div>
+    </div>
+    <pre><%= @job_run.execution_logs.order(:sequence).map(&:content).join("\n") %></pre>
+  </div>
+<% end %>
+
 <div style="margin-top: 24px;">
   <%= link_to "Edit", edit_project_pipeline_job_path(@pipeline.project, @pipeline, @job), class: "btn btn-secondary" %>
   <%= link_to "Delete", [@pipeline.project, @pipeline, @job], method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger" %>
