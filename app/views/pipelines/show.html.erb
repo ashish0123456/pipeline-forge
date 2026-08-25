@@ -7,16 +7,16 @@
   <span class="separator">/</span>
   <span><%= @pipeline.name %></span>
 </div>
-
-<div class="detail-section">
+<div class="detail-section detail-hero">
   <div class="page-header">
     <div class="page-header-title">
-      <h1><i class="fas fa-stream"></i> <%= @pipeline.name %></h1>
-      <p>Part of <%= link_to @project.name, @project, style: "color: var(--primary); text-decoration: none;" %></p>
+      <span class="eyebrow">Pipeline definition</span>
+      <h1><%= @pipeline.name %></h1>
+      <p>Part of <%= link_to @project.name, @project, class: "inline-link" %></p>
     </div>
     <div class="page-header-actions">
       <% if !@pipeline.running? %>
-        <%= button_to "Run Pipeline", run_project_pipeline_path(@project, @pipeline), method: :post, class: "btn btn-success", data: { confirm: "Are you sure you want to run this pipeline?" } %>
+        <%= button_to run_project_pipeline_path(@project, @pipeline), method: :post, class: "btn btn-primary", data: { turbo_confirm: "Run this pipeline now?" } do %><span aria-hidden="true">&#9654;</span> Run pipeline<% end %>
       <% end %>
       <%= link_to "Edit", edit_project_pipeline_path(@project, @pipeline), class: "btn btn-secondary btn-sm" %>
       <%= button_to "Delete", [@project, @pipeline], method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger btn-sm" %>
@@ -27,7 +27,7 @@
     <div class="detail-label">Status</div>
     <div class="detail-value">
       <span class="status-badge status-<%= @pipeline.status %>">
-        <i class="fas fa-circle" style="font-size: 8px;"></i>
+        <span class="status-dot" aria-hidden="true"></span>
         <%= @pipeline.status %>
       </span>
     </div>
@@ -43,58 +43,36 @@
     <div class="detail-value"><%= @pipeline.updated_at.strftime('%b %d, %Y at %I:%M %p') %></div>
   </div>
 </div>
-
-<div class="page-header" style="margin-top: 32px;">
-  <div class="page-header-title">
-    <h2><i class="fas fa-tasks"></i> Jobs</h2>
-    <p>Monitor jobs in this pipeline</p>
-  </div>
-  <div class="page-header-actions">
-    <%= link_to "+ New Job", new_project_pipeline_job_path(@project, @pipeline), class: "btn btn-primary" %>
-  </div>
-</div>
-
-<div class="table-container">
+<div class="section-heading section-heading-spaced"><div><span class="eyebrow">Definition</span><h2>Jobs</h2></div><%= link_to "Manage jobs", project_pipeline_jobs_path(@project, @pipeline), class: "text-link" %></div>
+<div class="table-container table-shell">
   <% if @pipeline.jobs.any? %>
     <table class="table">
-      <thead>
-        <tr>
-          <th style="width: 80px;">ID</th>
-          <th>Job Name</th>
-          <th>Status</th>
-          <th>Created</th>
-          <th style="width: 150px;">Actions</th>
-        </tr>
-      </thead>
+      <thead><tr><th>Job</th><th>Status</th><th>Position</th><th>Dependencies</th><th> </th></tr></thead>
       <tbody>
-        <% @pipeline.jobs.order(:created_at).each do |job| %>
+        <% @pipeline.jobs.ordered.each do |job| %>
           <tr>
-            <td><strong>#<%= job.id %></strong></td>
-            <td><%= link_to job.name, [@project, @pipeline, job], style: "color: var(--primary); text-decoration: none;" %></td>
-            <td>
-              <span class="status-badge status-<%= job.status %>">
-                <i class="fas fa-circle" style="font-size: 8px;"></i>
-                <%= job.status %>
-              </span>
-            </td>
-            <td><%= time_ago_in_words(job.created_at) %> ago</td>
-            <td>
-              <div class="action-links">
-                <%= link_to "View", [@project, @pipeline, job] %>
-                <%= link_to "Edit", edit_project_pipeline_job_path(@project, @pipeline, job) %>
-                <%= link_to "Delete", [@project, @pipeline, job], method: :delete, data: { confirm: "Are you sure?" }, style: "color: var(--danger);" %>
-              </div>
-            </td>
+            <td><%= link_to job.name, [@project, @pipeline, job], class: "table-primary" %><% if job.command.present? %><small class="table-subtext"><%= truncate(job.command, length: 56) %></small><% end %></td>
+            <td><span class="status-badge status-<%= job.status %>"><span class="status-dot" aria-hidden="true"></span><%= job.status %></span></td>
+            <td><span class="count-chip"><%= job.position + 1 %></span></td>
+            <td><%= job.depends_on_ids.any? ? pluralize(job.depends_on_ids.size, "job") : "None" %></td>
+            <td class="table-actions-cell"><%= link_to "Open", [@project, @pipeline, job], class: "table-action" %></td>
           </tr>
         <% end %>
       </tbody>
     </table>
   <% else %>
-    <div class="empty-state">
-      <i class="fas fa-tasks"></i>
-      <div class="empty-state-title">No jobs yet</div>
-      <p class="empty-state-text">Add a job to this pipeline</p>
-      <%= link_to "Create Job", new_project_pipeline_job_path(@project, @pipeline), class: "btn btn-primary" %>
-    </div>
+    <div class="empty-state"><div class="empty-icon">+</div><div class="empty-state-title">No jobs defined</div><p class="empty-state-text">Add the first step in this pipeline.</p><%= link_to "Add a job", new_project_pipeline_job_path(@project, @pipeline), class: "btn btn-primary" %></div>
   <% end %>
 </div>
+
+<div class="section-heading section-heading-spaced"><div><span class="eyebrow">Execution history</span><h2>Recent runs</h2></div><span class="section-count"><%= pluralize(@recent_runs.size, "run") %></span></div>
+<div class="run-list">
+  <% if @recent_runs.any? %>
+    <% @recent_runs.each do |run| %>
+      <div class="run-row"><div class="run-status"><span class="status-dot status-dot-<%= run.status %>"></span><strong>Run #<%= run.id %></strong></div><span class="status-badge status-<%= run.status %>"><%= run.status %></span><time datetime="<%= run.created_at.iso8601 %>"><%= time_ago_in_words(run.created_at) %> ago</time></div>
+    <% end %>
+  <% else %>
+    <div class="empty-state compact"><div class="empty-icon">&#8599;</div><div class="empty-state-title">No runs yet</div><p class="empty-state-text">Run the pipeline to see progress and logs here.</p></div>
+  <% end %>
+</div>
+

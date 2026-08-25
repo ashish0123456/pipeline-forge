@@ -7,3 +7,10 @@
 #   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
+
+if ENV["CI_SEED_ADMIN_PASSWORD"].present?
+	admin = User.find_or_initialize_by(email: ENV.fetch("CI_SEED_ADMIN_EMAIL", "admin@example.com"))
+	admin.password = ENV.fetch("CI_SEED_ADMIN_PASSWORD")
+	admin.role = :admin
+	admin.save!
+end

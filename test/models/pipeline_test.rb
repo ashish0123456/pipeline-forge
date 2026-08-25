@@ -33,9 +33,9 @@ class PipelineTest < ActiveSupport::TestCase
   end
 
   test "status enum values" do
-    assert_equal 0, Pipeline.statuses[:pending]
-    assert_equal 1, Pipeline.statuses[:running]
-    assert_equal 2, Pipeline.statuses[:success]
-    assert_equal 3, Pipeline.statuses[:failed]
+    assert_equal "pending", Pipeline.statuses[:pending]
+    assert_equal "running", Pipeline.statuses[:running]
+    assert_equal "success", Pipeline.statuses[:success]
+    assert_equal "failed", Pipeline.statuses[:failed]
   end
 end

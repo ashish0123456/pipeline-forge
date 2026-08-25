@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15
     environment:
       POSTGRES_DB: ci_platform_db
       POSTGRES_USER: ci_platform
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: ${CI_PLATFORM_DATABASE_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -23,8 +21,9 @@ services:
     build: .
     environment:
       RAILS_ENV: development
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
       CI_PLATFORM_DATABASE_USERNAME: ci_platform
-      CI_PLATFORM_DATABASE_PASSWORD: password
+      CI_PLATFORM_DATABASE_PASSWORD: ${CI_PLATFORM_DATABASE_PASSWORD}
       REDIS_URL: redis://redis:6379/0
     depends_on:
       - db

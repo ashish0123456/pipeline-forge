@@ -4,12 +4,8 @@ class PipelineJob
   sidekiq_options retry: 3
 
   def perform(pipeline_id)
-    Rails.logger.info "Processing Pipeline ##{pipeline_id}"
-
     pipeline = Pipeline.find(pipeline_id)
-    ExecutePipelineService.new(pipeline).call
-
-    Rails.logger.info "Completed Pipeline ##{pipeline_id}"
+    CreatePipelineRun.call(pipeline, idempotency_key: "legacy-#{jid}")
   rescue ActiveRecord::RecordNotFound => e
     Rails.logger.error "Pipeline not found: #{pipeline_id}"
   rescue => e

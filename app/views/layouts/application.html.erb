@@ -11,7 +11,6 @@
 
     <%= yield :head %>
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
@@ -20,24 +19,31 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
+  <body class="<%= current_user ? "authenticated" : "guest" %>">
     <div class="app-container">
-      <!-- Header -->
       <header class="app-header">
         <div class="header-brand">
-          <%= link_to "CI Platform", root_path, class: "brand-link" %>
+          <%= link_to root_path, class: "brand-link", aria: { label: "CI Platform home" } do %>
+            <span class="brand-mark" aria-hidden="true">CI</span>
+            <span>CI Platform</span>
+          <% end %>
         </div>
-        <div class="header-actions">
-          <span class="user-info">
-            <i class="fas fa-user-circle"></i> Developer
-          </span>
-        </div>
+        <% if current_user %>
+          <div class="header-actions">
+            <span class="user-info"><span class="avatar"><%= current_user.email.first.upcase %></span><%= current_user.email %></span>
+            <%= button_to logout_path, method: :delete, class: "text-button", aria: { label: "Sign out" } do %>
+              <span aria-hidden="true">&#8599;</span> Sign out
+            <% end %>
+          </div>
+        <% end %>
       </header>
 
-      <!-- Main content wrapper -->
       <div class="app-wrapper">
-        <!-- Sidebar -->
         <aside class="app-sidebar">
+          <div class="sidebar-intro">
+            <span class="eyebrow">Workspace</span>
+            <strong>Delivery control</strong>
+          </div>
           <nav class="sidebar-nav">
             <div class="nav-section">
               <h3 class="nav-title">Main</h3>
@@ -45,7 +51,7 @@
                 <li>
                   <% nav_class = "nav-link #{current_page?(projects_path) ? 'active' : ''}" %>
                   <%= link_to projects_path, class: nav_class do %>
-                    <i class="fas fa-cube"></i>
+                    <span class="nav-icon" aria-hidden="true">&#9632;</span>
                     <span>Projects</span>
                   <% end %>
                 </li>
@@ -54,25 +60,22 @@
           </nav>
         </aside>
 
-        <!-- Main content area -->
         <main class="app-main">
           <div class="content-container">
-            <!-- Flash messages -->
             <% if notice.present? %>
               <div class="alert alert-success" role="alert">
-                <i class="fas fa-check-circle"></i>
+                <span aria-hidden="true">&#10003;</span>
                 <%= notice %>
               </div>
             <% end %>
 
             <% if alert.present? %>
               <div class="alert alert-danger" role="alert">
-                <i class="fas fa-exclamation-circle"></i>
+                <span aria-hidden="true">!</span>
                 <%= alert %>
               </div>
             <% end %>
 
-            <!-- Page content -->
             <%= yield %>
           </div>
         </main>
