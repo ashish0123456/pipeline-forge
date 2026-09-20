@@ -18,6 +18,7 @@ module Api
       end
 
       def retry
+        authorize @project, :run?
         run = CreatePipelineRun.call(@pipeline, idempotency_key: "retry-#{@run.id}-#{SecureRandom.uuid}")
         render json: { data: serialize(run) }, status: :accepted
       end

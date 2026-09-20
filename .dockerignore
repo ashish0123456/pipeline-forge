@@ -1,4 +1,13 @@
-# See https://docs.docker.com/engine/reference/builder/#dockerignore-file for more about ignoring files.
+.git
+.gitlab
+.env*
+config/master.key
+log/*
+tmp/*
+storage/*
+vendor/ruby
+node_modules
+coverage# See https://docs.docker.com/engine/reference/builder/#dockerignore-file for more about ignoring files.
 
 # Ignore git directory.
 /.git/

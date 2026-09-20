@@ -12,7 +12,7 @@ class ProjectsController < ApplicationController
         cache_version = Rails.cache.fetch("projects/index/version", expires_in: 1.year) { 1 }
         cache_key = "projects/index/v2/#{cache_version}/user/#{current_user.id}"
         @projects = Rails.cache.fetch(cache_key, expires_in: 30.seconds) do
-            Project.includes(:pipelines).order(:name).to_a
+            policy_scope(Project).includes(:pipelines).order(:name).to_a
         end
         respond_to do |format|
             format.html
