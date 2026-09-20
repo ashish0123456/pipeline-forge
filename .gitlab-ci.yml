@@ -29,6 +29,7 @@ test:
     - gem install bundler
     - bundle config set path 'vendor/ruby'
     - bundle install --jobs $(nproc) --retry 3
+    - until pg_isready -h postgres -U ci_platform -d ci_platform_test; do sleep 1; done
     - bundle exec rails db:prepare
 
   script:

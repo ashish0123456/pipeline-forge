@@ -51,7 +51,7 @@ test:
   database: ci_platform_test
   username: <%= ENV["CI_PLATFORM_DATABASE_USERNAME"] %>
   password: <%= ENV["CI_PLATFORM_DATABASE_PASSWORD"] %>
-  host: localhost
+  host: <%= ENV.fetch("CI_PLATFORM_DATABASE_HOST", "localhost") %>
   
 production:
   primary: &primary_production
