@@ -60,8 +60,6 @@ RUN chmod +x bin/* && \
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
 
-
-
 # Final stage for app image
 FROM base
 
