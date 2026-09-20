@@ -57,24 +57,23 @@ Project
                └── ExecutionLog
 ```
 
-A `Pipeline` and its `Job` definitions describe what should run, while `PipelineRun` and `JobRun` represent a specific execution.
+`.gitlab-ci.yml` runs the Rails test suite for merge requests and `main`. On `main`, it builds the production image and pushes both the commit SHA tag and `latest` to the GitLab Container Registry using GitLab's built-in registry variables.
 
-Sidekiq handles pipeline orchestration and job execution asynchronously. Dependencies determine when individual jobs become runnable, while PostgreSQL transactions, constraints, and row locking maintain consistent execution state.
-
-Pipeline commands are executed separately from the Rails web process using isolated Docker containers with execution limits.
-
-## Getting Started
+The pipeline expects a GitLab Docker-in-Docker runner capable of privileged containers. Keep registry credentials and deployment credentials in protected GitLab CI/CD variables, never in the repository.
 
 ### Prerequisites
 
 - Docker
-- Docker Compose
+- Docker Compose v2
+- A GitLab project with Container Registry enabled for CI/CD
 
 ### Run with Docker
 
 ```bash
 git clone https://gitlab.com/Ash3941/pipeline-forge.git
 cd pipeline-forge
+copy .env.example .env
+# Edit .env and set RAILS_MASTER_KEY and CI_PLATFORM_DATABASE_PASSWORD.
 
 docker compose up --build
 ```
@@ -105,6 +104,40 @@ admin@example.com
 ```
 
 The email can be customized using `CI_SEED_ADMIN_EMAIL`.
+
+Stop the local stack with:
+
+```bash
+docker compose down
+```
+
+To remove local database and Redis data as well, use `docker compose down -v`.
+
+### Production deployment
+
+The production Compose file runs the image published by the GitLab pipeline. Set these variables in the deployment environment before starting it:
+
+```text
+CI_REGISTRY_IMAGE=registry.gitlab.com/<group>/<project>
+IMAGE_TAG=<commit SHA or latest>
+RAILS_MASTER_KEY=<production Rails master key>
+CI_PLATFORM_DATABASE_PASSWORD=<strong database password>
+```
+
+Log in to the GitLab Container Registry, then run:
+
+```bash
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
+
+The application listens on port `80`, and `/up` is the database and Redis health endpoint.
+
+### CI/CD
+
+`.gitlab-ci.yml` runs the Rails test suite for merge requests and `main`. On `main`, it builds the production image and pushes both the commit SHA tag and `latest` to the GitLab Container Registry using GitLab's built-in registry variables. No Docker Hub credentials are required.
+
+The pipeline expects a GitLab Docker-in-Docker runner capable of privileged containers. Keep `RAILS_MASTER_KEY` and deployment credentials in protected GitLab CI/CD variables, never in the repository.
 
 ## API
 
@@ -158,6 +191,15 @@ Run the application quality and security checks with:
 bin/rubocop
 bin/brakeman --quiet --no-pager
 bin/bundler-audit
+bin/rails zeitwerk:check
+```
+
+Run the same checks locally in the CI order with:
+
+```bash
+bin/rails test
+bin/rubocop
+bin/brakeman --quiet --no-pager
 bin/rails zeitwerk:check
 ```
 

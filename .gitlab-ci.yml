@@ -1,17 +1,12 @@
 stages:
   - test
   - build
-  - push
 
 variables:
   DOCKER_HOST: tcp://docker:2376
   DOCKER_TLS_CERTDIR: "/certs"
   DOCKER_DRIVER: overlay2
-  IMAGE_NAME: $DOCKERHUB_USERNAME/ci_platform
 
-# -------------------------
-# TEST STAGE
-# -------------------------
 test:
   stage: test
   image: ruby:3.4.8
@@ -20,9 +15,13 @@ test:
     - redis:7-alpine
 
   variables:
+    RAILS_ENV: test
     POSTGRES_DB: ci_platform_test
     POSTGRES_USER: ci_platform
     POSTGRES_PASSWORD: password
+    CI_PLATFORM_DATABASE_HOST: postgres
+    CI_PLATFORM_DATABASE_USERNAME: ci_platform
+    CI_PLATFORM_DATABASE_PASSWORD: password
     REDIS_URL: redis://redis:6379/0
 
   before_script:
@@ -30,8 +29,7 @@ test:
     - gem install bundler
     - bundle config set path 'vendor/ruby'
     - bundle install --jobs $(nproc) --retry 3
-    - bundle exec rails db:create RAILS_ENV=test
-    - bundle exec rails db:migrate RAILS_ENV=test
+    - bundle exec rails db:prepare
 
   script:
     - bundle exec rails test
@@ -45,40 +43,20 @@ test:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == "main"
 
-# -------------------------
-# BUILD STAGE
-# -------------------------
-build:
+build_and_push:
   stage: build
-  image: docker:24.0.5
+  image: docker:27.4.1
   services:
-    - docker:24.0.5-dind
+    - name: docker:27.4.1-dind
+      alias: docker
+
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" --username "$CI_REGISTRY_USER" --password-stdin
 
   script:
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA .
-    - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
-
-  artifacts:
-    expire_in: 1 hour
-    reports:
-      dotenv: build.env
-
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-
-# -------------------------
-# PUSH STAGE
-# -------------------------
-push:
-  stage: push
-  image: docker:24.0.5
-  services:
-    - docker:24.0.5-dind
-
-  script:
-    - docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
-    - docker push $IMAGE_NAME:latest
+    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" -t "$CI_REGISTRY_IMAGE:latest" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+    - docker push "$CI_REGISTRY_IMAGE:latest"
 
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
