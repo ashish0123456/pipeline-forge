@@ -2,10 +2,12 @@
 
 one:
   name: Test Job One
+  command: echo test one
   status: pending
   pipeline: one
 
 two:
   name: Test Job Two
+  command: echo test two
   status: success
   pipeline: two

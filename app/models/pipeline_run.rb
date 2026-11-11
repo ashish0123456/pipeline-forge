@@ -8,6 +8,7 @@ class PipelineRun < ApplicationRecord
   enum :status, { pending: "pending", running: "running", success: "success", failed: "failed", cancelled: "cancelled" }
 
   validates :idempotency_key, presence: true, uniqueness: { scope: :pipeline_id }
+  validates :commit_sha, format: { with: /\A[a-f0-9]{40}\z/i }, unless: -> { commit_sha == "legacy" }
 
   scope :recent, -> { order(created_at: :desc) }
 

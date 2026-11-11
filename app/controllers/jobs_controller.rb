@@ -1,6 +1,6 @@
 class JobsController < ApplicationController
     before_action :set_pipeline
-    before_action :set_job, only: [:show, :edit, :update, :destroy]
+    before_action :set_job, only: [ :show, :edit, :update, :destroy ]
 
     def set_pipeline
         @pipeline = policy_scope(Project).find(params[:project_id]).pipelines.find(params[:pipeline_id])
@@ -33,6 +33,7 @@ class JobsController < ApplicationController
     end
 
     def edit
+        authorize @pipeline.project, :update?
     end
 
     def create
@@ -40,11 +41,11 @@ class JobsController < ApplicationController
         @job = @pipeline.jobs.create(job_params)
         respond_to do |format|
             if @job.persisted?
-                format.html { redirect_to [@pipeline.project, @pipeline, @job], notice: "Job was successfully created." }
+                format.html { redirect_to [ @pipeline.project, @pipeline, @job ], notice: "Job was successfully created." }
                 format.json { render json: @job, status: :created }
             else
                 format.html { render :new, status: :unprocessable_entity }
-                format.json { render json: {errors: @job.errors.full_messages}, status: :unprocessable_entity }
+                format.json { render json: { errors: @job.errors.full_messages }, status: :unprocessable_entity }
             end
         end
     end
@@ -53,11 +54,11 @@ class JobsController < ApplicationController
         authorize @pipeline.project, :update?
         respond_to do |format|
             if @job.update(job_params)
-                format.html { redirect_to [@pipeline.project, @pipeline, @job], notice: "Job was successfully updated." }
+                format.html { redirect_to [ @pipeline.project, @pipeline, @job ], notice: "Job was successfully updated." }
                 format.json { render json: @job }
             else
                 format.html { render :edit, status: :unprocessable_entity }
-                format.json { render json: {errors: @job.errors.full_messages}, status: :unprocessable_entity }
+                format.json { render json: { errors: @job.errors.full_messages }, status: :unprocessable_entity }
             end
         end
     end
@@ -74,6 +75,6 @@ class JobsController < ApplicationController
     private
 
     def job_params
-        params.require(:job).permit(:name, :status)
+        params.require(:job).permit(:name, :status, :command)
     end
 end

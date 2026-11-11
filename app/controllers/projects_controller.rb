@@ -1,7 +1,7 @@
 class ProjectsController < ApplicationController
     include Auditable
-    before_action :set_project, only: [:show, :edit, :update, :destroy]
-    
+    before_action :set_project, only: [ :show, :edit, :update, :destroy ]
+
     def set_project
         @project = policy_scope(Project).find(params[:id])
         authorize @project
@@ -9,8 +9,7 @@ class ProjectsController < ApplicationController
 
     # GET /projects
     def index
-        cache_version = Rails.cache.fetch("projects/index/version", expires_in: 1.year) { 1 }
-        cache_key = "projects/index/v2/#{cache_version}/user/#{current_user.id}"
+        cache_key = "projects/index/v2/user/#{current_user.id}"
         @projects = Rails.cache.fetch(cache_key, expires_in: 30.seconds) do
             policy_scope(Project).includes(:pipelines).order(:name).to_a
         end
@@ -51,7 +50,7 @@ class ProjectsController < ApplicationController
                 format.json { render json: @project, status: :created }
             else
                 format.html { render :new, status: :unprocessable_entity }
-                format.json { render json: {errors: @project.errors.full_messages}, status: :unprocessable_entity }
+                format.json { render json: { errors: @project.errors.full_messages }, status: :unprocessable_entity }
             end
         end
     end
@@ -66,7 +65,7 @@ class ProjectsController < ApplicationController
                 format.json { render json: @project }
             else
                 format.html { render :edit, status: :unprocessable_entity }
-                format.json { render json: {errors: @project.errors.full_messages}, status: :unprocessable_entity }
+                format.json { render json: { errors: @project.errors.full_messages }, status: :unprocessable_entity }
             end
         end
     end
@@ -78,7 +77,7 @@ class ProjectsController < ApplicationController
         record_audit!("project.destroy", @project)
         respond_to do |format|
             format.html { redirect_to projects_url, notice: "Project was successfully destroyed." }
-            format.json { render json: {message: "Deleted #{@project.name} Successfully"} }
+            format.json { render json: { message: "Deleted #{@project.name} Successfully" } }
         end
     end
 
@@ -87,5 +86,4 @@ class ProjectsController < ApplicationController
     def project_params
         params.require(:project).permit(:name, :repository_url)
     end
-
 end

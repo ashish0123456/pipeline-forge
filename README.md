@@ -8,16 +8,24 @@ PipelineForge is a CI/CD workflow automation platform that enables developers to
 - Multi-stage pipeline execution with job dependencies
 - Durable pipeline and job execution tracking
 - Background job processing with Sidekiq and Redis
-- Job retries, failure handling, and cancellation
+- Bounded job retries and failure handling
 - Idempotent pipeline triggering
 - Concurrent execution protection
-- Execution logs and real-time status updates
+- Per-job execution logs and status history
 - Authentication and project-level authorization
 - Versioned REST API with pagination, filtering, and rate limiting
 - PostgreSQL constraints, transactions, locking, and optimized indexes
 - Redis-backed caching
 - Audit logging and application monitoring
 - Docker-based isolated job execution
+
+## Running a pipeline
+
+For a manual run, add a public GitHub or GitLab HTTPS repository to a project, create at least one job with a command, then open the pipeline and enter a full 40-character commit SHA. The worker downloads that commit's source archive once and runs the pipeline's jobs against the same checkout. A run records its repository URL and SHA so its source revision is auditable. Open a run from the pipeline's run history to inspect each snapshotted command, status, exit code, and output.
+
+The initial runner is intentionally bounded: archives are limited to 50 MiB compressed and 200 MiB extracted, a run is limited to 20 jobs, commands have a five-minute timeout, the total executor runtime is 15 minutes, and each job's persisted output is limited to 1 MiB by default. Each run snapshots its repository URL, commit SHA, job names, and commands. These limits can be adjusted with the `CI_*` settings in `.env.example`.
+
+Execution requires Docker access for the Sidekiq worker. The Compose files mount the host Docker socket into that worker; Docker socket access is effectively host-admin access. Keep this personal demo limited to repositories and commands you trust, use a dedicated machine, set `DOCKER_GID` to the group ID that can access the Docker socket, and do not treat it as a public multi-tenant CI service. Job containers run without network access, so any dependencies a command needs must already be present in the selected executor image. The default `ruby:3.4.8-slim` image is a minimal Ruby environment, not a preconfigured Rails build image.
 
 ## Technology Stack
 
@@ -78,17 +86,25 @@ copy .env.example .env
 docker compose up --build
 ```
 
+Compose reads the root `.env` file and passes its values into the app and worker containers. The app and worker use the Compose PostgreSQL service as their database host.
+
 The application will be available at:
 
 ```text
 http://localhost:3000
 ```
 
-Create the initial administrator:
+Set the admin credentials in `.env` before starting Compose:
 
 ```bash
-docker compose exec app bash -lc \
-  'CI_SEED_ADMIN_PASSWORD="change-this-password" bundle exec rails db:seed'
+CI_SEED_ADMIN_EMAIL=admin@example.com
+CI_SEED_ADMIN_PASSWORD=choose-a-strong-local-password
+```
+
+On startup, the development app waits for PostgreSQL, prepares/migrates the database, runs the idempotent seed, then starts Rails. The admin password is passed only to the app container, not the Sidekiq worker. No separate seed command is needed:
+
+```bash
+docker compose up --build
 ```
 
 Then sign in at:
@@ -103,7 +119,7 @@ Default administrator email:
 admin@example.com
 ```
 
-The email can be customized using `CI_SEED_ADMIN_EMAIL`.
+The email can be customized using `CI_SEED_ADMIN_EMAIL`. In this development Compose setup, restarting the app applies the password currently in `.env` to that admin account. Do not copy this automatic password-seeding behavior into a production deployment; provision production admin credentials through a controlled one-time process instead.
 
 Stop the local stack with:
 
@@ -159,7 +175,7 @@ Execution-related endpoints include:
 | `GET` | `/api/v1/projects/:project_id/pipelines/:pipeline_id/pipeline_runs/:pipeline_run_id/execution_logs` | View execution logs |
 | `POST` | `/projects/:project_id/pipelines/:id/run` | Trigger a pipeline |
 
-API requests use bearer-token authentication. Pipeline triggers support `Idempotency-Key` to prevent accidental duplicate executions.
+API requests use bearer-token authentication. Pipeline triggers support `Idempotency-Key` to prevent accidental duplicate executions. Browser-triggered runs require a full commit SHA in the `commit_sha` form field; retries reuse the original run's SHA and repository URL.
 
 ## Database & Performance
 

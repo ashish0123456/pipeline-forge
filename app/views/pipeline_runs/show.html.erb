@@ -1,0 +1,73 @@
+<div class="breadcrumb">
+  <%= link_to "Projects", projects_path %>
+  <span class="separator">/</span>
+  <%= link_to @project.name, @project %>
+  <span class="separator">/</span>
+  <%= link_to @pipeline.name, [@project, @pipeline] %>
+  <span class="separator">/</span>
+  <span>Run #<%= @pipeline_run.id %></span>
+</div>
+
+<div class="detail-section detail-hero">
+  <div class="page-header">
+    <div class="page-header-title">
+      <span class="eyebrow">Pipeline run</span>
+      <h1>Run #<%= @pipeline_run.id %></h1>
+      <p><%= link_to @pipeline.name, [@project, @pipeline] %> · <%= @project.name %></p>
+    </div>
+    <div class="page-header-actions">
+      <span class="status-badge status-<%= @pipeline_run.status %>"><span class="status-dot" aria-hidden="true"></span><%= @pipeline_run.status %></span>
+    </div>
+  </div>
+
+  <div class="detail-row">
+    <div class="detail-label">Commit</div>
+    <div class="detail-value"><code><%= @pipeline_run.commit_sha %></code></div>
+  </div>
+  <div class="detail-row">
+    <div class="detail-label">Repository</div>
+    <div class="detail-value"><code><%= @pipeline_run.source_url %></code></div>
+  </div>
+  <div class="detail-row">
+    <div class="detail-label">Started</div>
+    <div class="detail-value"><%= @pipeline_run.started_at&.strftime("%b %d, %Y at %I:%M %p") || "Not started" %></div>
+  </div>
+  <div class="detail-row">
+    <div class="detail-label">Finished</div>
+    <div class="detail-value"><%= @pipeline_run.finished_at&.strftime("%b %d, %Y at %I:%M %p") || "In progress" %></div>
+  </div>
+  <% if @pipeline_run.failure_reason.present? %>
+    <div class="alert alert-danger" role="alert"><%= @pipeline_run.failure_reason %></div>
+  <% end %>
+</div>
+
+<div class="section-heading section-heading-spaced">
+  <div><span class="eyebrow">Results</span><h2>Jobs</h2></div>
+  <span class="section-count"><%= pluralize(@job_runs.size, "job") %></span>
+</div>
+
+<div class="table-container table-shell">
+  <% if @job_runs.any? %>
+    <% @job_runs.each do |job_run| %>
+      <section class="detail-section" aria-labelledby="job-run-<%= job_run.id %>">
+        <div class="page-header">
+          <div class="page-header-title">
+            <h3 id="job-run-<%= job_run.id %>"><%= job_run.job_name_snapshot %></h3>
+            <p><code><%= job_run.command_snapshot %></code></p>
+          </div>
+          <div class="page-header-actions">
+            <span class="status-badge status-<%= job_run.status %>"><%= job_run.status %></span>
+            <span>Attempt <%= job_run.attempt %></span>
+            <% if job_run.exit_code.present? %><span>Exit code <%= job_run.exit_code %></span><% end %>
+          </div>
+        </div>
+        <% if job_run.failure_reason.present? %>
+          <p class="alert alert-danger"><%= job_run.failure_reason %></p>
+        <% end %>
+        <pre><%= job_run.execution_logs.order(:sequence).map(&:content).join("\n") %></pre>
+      </section>
+    <% end %>
+  <% else %>
+    <div class="empty-state compact"><div class="empty-state-title">No jobs were captured for this run</div></div>
+  <% end %>
+</div>

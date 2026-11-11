@@ -1,18 +1,22 @@
 require "test_helper"
 
 class OrchestratePipelineJobTest < ActiveSupport::TestCase
-  test "schedules jobs whose dependencies succeeded" do
+  test "runs a pipeline and records a terminal success status" do
     pipeline = pipelines(:one)
-    dependency = pipeline.jobs.create!(name: "Build", position: 1)
-    dependent = pipeline.jobs.create!(name: "Test", position: 2, depends_on_ids: [dependency.id])
-    run = pipeline.pipeline_runs.create!(idempotency_key: "orchestration-test")
-    first_run = run.job_runs.create!(job: dependency)
-    run.job_runs.create!(job: dependent)
-    first_run.update!(status: :success)
+    run = pipeline.pipeline_runs.create!(idempotency_key: "orchestration-test", commit_sha: "a" * 40, source_url: pipeline.project.repository_url)
+    job = pipeline.jobs.first
+    run.job_runs.create!(job: job, command_snapshot: job.command, job_name_snapshot: job.name)
 
-    Sidekiq::Testing.fake! do
-      OrchestratePipelineJob.new.perform(run.id)
-      assert_equal [dependent.id], ExecuteJob.jobs.map { |job| job["args"].first }.map { |id| JobRun.find(id).job_id }
-    end
+    worker = Class.new(OrchestratePipelineJob) do
+      private
+
+      def execute_pipeline(_run)
+        true
+      end
+    end.new
+    worker.perform(run.id)
+
+    assert run.reload.success?
+    assert_not_nil run.finished_at
   end
 end

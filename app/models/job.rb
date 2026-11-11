@@ -5,6 +5,7 @@ class Job < ApplicationRecord
   enum :status, { pending: "pending", running: "running", success: "success", failed: "failed" }
 
   validates :name, presence: true
+  validates :command, presence: true, length: { maximum: 2_000 }
   validates :max_attempts, numericality: { only_integer: true, in: 1..10 }
   validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 

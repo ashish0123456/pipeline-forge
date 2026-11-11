@@ -28,6 +28,8 @@
     <div class="form-group">
       <%= form.label :repository_url, "Repository URL" %>
       <%= form.text_field :repository_url, placeholder: "https://github.com/user/repo", class: "form-control" %>
+      <small>Use a public GitHub or GitLab repository. Private repositories are not supported.</small>
+      <small>Runs are limited to 50 MiB compressed and 200 MiB extracted source archives.</small>
     </div>
 
     <div class="btn-group">

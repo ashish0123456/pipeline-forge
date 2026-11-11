@@ -9,6 +9,8 @@ class JobRun < ApplicationRecord
 
   validates :attempt, numericality: { greater_than_or_equal_to: 0 }
   validates :job_id, uniqueness: { scope: :pipeline_run_id }
+  validates :command_snapshot, presence: true, length: { maximum: 2_000 }
+  validates :job_name_snapshot, presence: true
 
   scope :ready, -> { pending }
 

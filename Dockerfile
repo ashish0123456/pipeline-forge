@@ -61,6 +61,9 @@ RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 # Final stage for app image
 FROM base
 
+# The worker uses the Docker CLI to create isolated job containers.
+COPY --from=docker:28-cli /usr/local/bin/docker /usr/local/bin/docker
+
 # Run and own only the runtime files as a non-root user for security
 RUN groupadd --system --gid 1000 rails && \
     useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash

@@ -15,8 +15,10 @@
       <p>Part of <%= link_to @project.name, @project, class: "inline-link" %></p>
     </div>
     <div class="page-header-actions">
-      <% if !@pipeline.running? %>
-        <%= button_to run_project_pipeline_path(@project, @pipeline), method: :post, class: "btn btn-primary", data: { turbo_confirm: "Run this pipeline now?" } do %><span aria-hidden="true">&#9654;</span> Run pipeline<% end %>
+      <%= form_with url: run_project_pipeline_path(@project, @pipeline), method: :post, local: true, class: "pipeline-run-form" do |form| %>
+        <%= form.label :commit_sha, "Commit SHA", class: "sr-only" %>
+        <%= form.text_field :commit_sha, required: true, minlength: 40, maxlength: 40, pattern: "[0-9a-fA-F]{40}", placeholder: "40-character commit SHA", class: "form-control", aria: { label: "Commit SHA to run" } %>
+        <%= form.submit "Run pipeline", class: "btn btn-primary", data: { turbo_confirm: "Run this pipeline at the selected commit?" } %>
       <% end %>
       <%= link_to "Edit", edit_project_pipeline_path(@project, @pipeline), class: "btn btn-secondary btn-sm" %>
       <%= button_to "Delete", [@project, @pipeline], method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger btn-sm" %>
@@ -26,9 +28,9 @@
   <div class="detail-row">
     <div class="detail-label">Status</div>
     <div class="detail-value">
-      <span class="status-badge status-<%= @pipeline.status %>">
+      <span class="status-badge status-<%= @latest_run&.status || @pipeline.status %>">
         <span class="status-dot" aria-hidden="true"></span>
-        <%= @pipeline.status %>
+        <%= @latest_run&.status || "not run" %>
       </span>
     </div>
   </div>
@@ -69,7 +71,7 @@
 <div class="run-list">
   <% if @recent_runs.any? %>
     <% @recent_runs.each do |run| %>
-      <div class="run-row"><div class="run-status"><span class="status-dot status-dot-<%= run.status %>"></span><strong>Run #<%= run.id %></strong></div><span class="status-badge status-<%= run.status %>"><%= run.status %></span><time datetime="<%= run.created_at.iso8601 %>"><%= time_ago_in_words(run.created_at) %> ago</time></div>
+      <div class="run-row"><div class="run-status"><span class="status-dot status-dot-<%= run.status %>"></span><strong><%= link_to "Run ##{run.id}", [@project, @pipeline, run] %></strong> <code><%= run.commit_sha %></code><% if run.failure_reason.present? %><small class="table-subtext"><%= run.failure_reason %></small><% end %></div><span class="status-badge status-<%= run.status %>"><%= run.status %></span><time datetime="<%= run.created_at.iso8601 %>"><%= time_ago_in_words(run.created_at) %> ago</time></div>
     <% end %>
   <% else %>
     <div class="empty-state compact"><div class="empty-icon">&#8599;</div><div class="empty-state-title">No runs yet</div><p class="empty-state-text">Run the pipeline to see progress and logs here.</p></div>

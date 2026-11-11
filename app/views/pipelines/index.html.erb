@@ -47,9 +47,6 @@
             <td>
               <div class="action-links">
                 <%= link_to "View", [@project, pipeline] %>
-                <% if !pipeline.running? %>
-                  <%= link_to "Run", run_project_pipeline_path(@project, pipeline), method: :post, data: { confirm: "Are you sure you want to run this pipeline?" }, style: "color: var(--success);" %>
-                <% end %>
                 <%= button_to "Delete", [@project, pipeline], method: :delete, data: { confirm: "Are you sure?" }, style: "color: var(--danger);" %>
               </div>
             </td>

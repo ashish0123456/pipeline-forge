@@ -12,7 +12,7 @@ class PipelinesController < ApplicationController
         @pipeline = @project.pipelines.find(params[:id])
     end
 
-    def index 
+    def index
         @pipelines = @project.pipelines
         respond_to do |format|
             format.html
@@ -24,6 +24,7 @@ class PipelinesController < ApplicationController
         authorize @project
         @pipeline = @project.pipelines.includes(jobs: { job_runs: :execution_logs }, pipeline_runs: { job_runs: :job }).find(params[:id])
         @recent_runs = @pipeline.pipeline_runs.recent.limit(8)
+        @latest_run = @recent_runs.first
         respond_to do |format|
             format.html
             format.json { render json: @pipeline }
@@ -45,28 +46,37 @@ class PipelinesController < ApplicationController
         respond_to do |format|
             if @pipeline.save
                 record_audit!("pipeline.create", @pipeline)
-                format.html { redirect_to [@project, @pipeline], notice: "Pipeline was successfully created." }
+                format.html { redirect_to [ @project, @pipeline ], notice: "Pipeline was successfully created." }
                 format.json { render json: @pipeline, status: :created }
             else
                 format.html { render :new, status: :unprocessable_entity }
-                format.json { render json: {errors: @pipeline.errors.full_messages}, status: :unprocessable_entity }
+                format.json { render json: { errors: @pipeline.errors.full_messages }, status: :unprocessable_entity }
             end
         end
     end
 
     def run
         authorize @project, :run?
-        run = CreatePipelineRun.call(@pipeline, idempotency_key: request.headers["Idempotency-Key"])
+        run = CreatePipelineRun.call(
+            @pipeline,
+            idempotency_key: request.headers["Idempotency-Key"],
+            commit_sha: params.require(:commit_sha)
+        )
         record_audit!("pipeline.run", run, { pipeline_id: @pipeline.id })
         respond_to do |format|
-            format.html { redirect_to [@project, @pipeline], notice: "Pipeline execution started." }
+            format.html { redirect_to [ @project, @pipeline ], notice: "Pipeline execution started." }
             format.json { render json: { id: run.id, status: run.status }, status: :accepted }
         end
     rescue CreatePipelineRun::AlreadyRunning
         respond_to do |format|
-            format.html { redirect_to [@project, @pipeline], alert: "Pipeline is already running." }
+            format.html { redirect_to [ @project, @pipeline ], alert: "Pipeline is already running." }
             format.json { render json: { error: "Pipeline is already running" }, status: :conflict }
         end
+        rescue ArgumentError, ActionController::ParameterMissing => error
+            respond_to do |format|
+                format.html { redirect_to [ @project, @pipeline ], alert: error.message }
+                format.json { render json: { error: error.message }, status: :unprocessable_entity }
+            end
     end
 
     def update
@@ -74,11 +84,11 @@ class PipelinesController < ApplicationController
         respond_to do |format|
             if @pipeline.update(pipeline_params)
                 record_audit!("pipeline.update", @pipeline)
-                format.html { redirect_to [@project, @pipeline], notice: "Pipeline was successfully updated." }
+                format.html { redirect_to [ @project, @pipeline ], notice: "Pipeline was successfully updated." }
                 format.json { render json: @pipeline }
             else
                 format.html { render :edit, status: :unprocessable_entity }
-                format.json { render json: {errors: @pipeline.errors.full_messages}, status: :unprocessable_entity }
+                format.json { render json: { errors: @pipeline.errors.full_messages }, status: :unprocessable_entity }
             end
         end
     end

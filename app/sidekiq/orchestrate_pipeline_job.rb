@@ -5,27 +5,28 @@ class OrchestratePipelineJob
 
   def perform(pipeline_run_id)
     run = PipelineRun.includes(:pipeline, job_runs: :job).find(pipeline_run_id)
-
     run.with_lock do
-      next if run.success? || run.failed? || run.cancelled?
+      return unless run.pending?
 
       run.update!(status: :running, started_at: run.started_at || Time.current)
-      schedule_ready_jobs(run)
     end
+
+    execute_pipeline(run)
+    run.update!(status: :success, finished_at: Time.current)
+  rescue StandardError => error
+    run&.job_runs&.where(status: :running)&.each do |job_run|
+      job_run.update(status: :failed, failure_reason: error.message.to_s.truncate(2_000), finished_at: Time.current)
+    end
+    run&.job_runs&.where(status: :pending)&.each do |job_run|
+      job_run.update(status: :cancelled, finished_at: Time.current)
+    end
+    run&.update(status: :failed, failure_reason: error.message.to_s.truncate(2_000), finished_at: Time.current)
+    Rails.logger.error("Pipeline run #{pipeline_run_id} failed: #{error.class}: #{error.message}")
   end
 
   private
 
-  def schedule_ready_jobs(run)
-    successful_job_ids = run.job_runs.where(status: :success).pluck(:job_id)
-
-    run.job_runs.pending.includes(:job).find_each do |job_run|
-      dependencies = job_run.job.depends_on_ids
-      next unless dependencies.all? { |dependency_id| successful_job_ids.include?(dependency_id) }
-
-      ExecuteJob.perform_async(job_run.id)
-    end
-
-    run.refresh_status!
+  def execute_pipeline(run)
+    ExecutePipelineRun.call(run)
   end
 end

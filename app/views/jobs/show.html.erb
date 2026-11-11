@@ -17,9 +17,9 @@
       <p><%= @job.name %> • <%= @pipeline.name %> • <%= link_to @pipeline.project.name, @pipeline.project, style: "color: var(--primary); text-decoration: none;" %></p>
     </div>
     <div class="page-header-actions">
-      <span class="status-badge status-<%= @job.status %>" style="font-size: 14px; padding: 8px 14px;">
+      <span class="status-badge status-<%= @job_run&.status || @job.status %>" style="font-size: 14px; padding: 8px 14px;">
         <i class="fas fa-circle" style="font-size: 10px;"></i>
-        <%= @job.status %>
+        <%= @job_run&.status || @job.status %>
       </span>
     </div>
   </div>
@@ -27,9 +27,9 @@
   <div class="detail-row">
     <div class="detail-label">Status</div>
     <div class="detail-value">
-      <span class="status-badge status-<%= @job.status %>">
+      <span class="status-badge status-<%= @job_run&.status || @job.status %>">
         <i class="fas fa-circle" style="font-size: 8px;"></i>
-        <%= @job.status %>
+        <%= @job_run&.status || @job.status %>
       </span>
     </div>
   </div>
@@ -39,6 +39,11 @@
     <div class="detail-value">
       <%= link_to "#{@pipeline.name}", [@pipeline.project, @pipeline], style: "color: var(--primary); text-decoration: none;" %>
     </div>
+  </div>
+
+  <div class="detail-row">
+    <div class="detail-label">Command</div>
+    <div class="detail-value"><pre><%= @job.command %></pre></div>
   </div>
 
   <div class="detail-row">

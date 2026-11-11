@@ -10,6 +10,7 @@ class PipelinesControllerTest < ActionDispatch::IntegrationTest
 
     Sidekiq::Testing.fake! do
       post run_project_pipeline_url(projects(:one), pipelines(:one)),
+        params: { commit_sha: "a" * 40 },
         headers: { "Idempotency-Key" => "controller-run-1" }, as: :json
 
       assert_response :accepted
